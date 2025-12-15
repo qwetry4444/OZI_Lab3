@@ -4,7 +4,7 @@ import java.io.File
 import javax.imageio.ImageIO
 
 
-const val MESSAGE_BITS_PER_CHANNEL = 3
+const val MESSAGE_BITS_PER_CHANNEL = 8
 const val END_MARKER = '\u0003'
 
 
@@ -12,9 +12,8 @@ fun main() {
     val srcFilePath = "C:\\Users\\Maks\\IdeaProjects\\OZI_Lab3\\src\\hobbies.png"
     val dstFilePath = "C:\\Users\\Maks\\IdeaProjects\\OZI_Lab3\\src\\LogoAfter.png"
     val srcImage = ImageIO.read(File(srcFilePath))
-    val message = "123"
+    val message = "slkdghsoighug"
 
-    
     hideMessage(srcImage, File(dstFilePath), message)
     val dstImage = ImageIO.read(File(dstFilePath))
 
@@ -46,23 +45,21 @@ fun putMessagePartToPixelOrFinish(messageIterator: Iterator<Int>, image: Buffere
 
         repeat(MESSAGE_BITS_PER_CHANNEL) {
             bitsValue = bitsValue shl 1
-            if (messageIterator.hasNext()) {
-                bitsValue = bitsValue or messageIterator.next()
-            } else {
-                channels[i] = (channels[i] and ((1 shl MESSAGE_BITS_PER_CHANNEL) - 1).inv()) or bitsValue
+            bitsValue = bitsValue or if (messageIterator.hasNext()) messageIterator.next() else 0
+        }
+        val mask = ((1 shl MESSAGE_BITS_PER_CHANNEL) - 1).inv()
+        channels[i] = (channels[i] and mask) or bitsValue
+
+        if (!messageIterator.hasNext()) {
                 val newColor = (channels[0] shl 24) or (channels[1] shl 16) or (channels[2] shl 8) or channels[3]
                 image.setRGB(x, y, newColor)
                 return true
             }
         }
 
-        val mask = ((1 shl MESSAGE_BITS_PER_CHANNEL) - 1).inv()
-        channels[i] = (channels[i] and mask) or bitsValue
-    }
-
-    val newColor = (channels[0] shl 24) or (channels[1] shl 16) or (channels[2] shl 8) or channels[3]
-    image.setRGB(x, y, newColor)
-    return false
+        val newColor = (channels[0] shl 24) or (channels[1] shl 16) or (channels[2] shl 8) or channels[3]
+        image.setRGB(x, y, newColor)
+        return false
 }
 
 fun getPixelChannels(pixel: Int) : IntArray {
@@ -91,8 +88,8 @@ fun getMessageFromImage(imageWithMessage: BufferedImage): String {
         }
     }
 
-    val bytes = bitsList.chunked(8).map { bits ->
-        bits.fold(0) { acc, bit -> (acc shl 1) or bit }
+    val bytes = bitsList.chunked(8).map { bytes ->
+        bytes.fold(0) { acc, bit -> (acc shl 1) or bit }
     }
 
     val message = bytes
